@@ -21,20 +21,14 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.PFX_SSH_KEY }}" > ~/.ssh/pfx_key
           chmod 600 ~/.ssh/pfx_key
-          ssh-keyscan -H "${{ secrets.PFX_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -t rsa,ecdsa,ed25519 -H "${{ secrets.PFX_HOST }}" >> ~/.ssh/known_hosts
 
       - name: Run PFX Deploy Safe
         shell: bash
         run: |
-          ssh -o StrictHostKeyChecking=no \
-          -i ~/.ssh/pfx_key \
-          ${{ secrets.PFX_USER }}@${{ secrets.PFX_HOST }} \
-          "sudo /usr/local/bin/pfx-deploy-safe"
+          ssh -o StrictHostKeyChecking=no -o HostKeyAlgorithms=+ssh-ed25519,ecdsa-sha2-nistp256,rsa-sha2-512,rsa-sha2-256 -o PubkeyAcceptedAlgorithms=+ssh-ed25519,rsa-sha2-512,rsa-sha2-256 -i ~/.ssh/pfx_key "${{ secrets.PFX_USER }}@${{ secrets.PFX_HOST }}" "sudo /usr/local/bin/pfx-deploy-safe"
 
       - name: Check PFX Status
         shell: bash
         run: |
-          ssh -o StrictHostKeyChecking=no \
-          -i ~/.ssh/pfx_key \
-          ${{ secrets.PFX_USER }}@${{ secrets.PFX_HOST }} \
-          "sudo /usr/local/bin/pfx-status"
+          ssh -o StrictHostKeyChecking=no -o HostKeyAlgorithms=+ssh-ed25519,ecdsa-sha2-nistp256,rsa-sha2-512,rsa-sha2-256 -o PubkeyAcceptedAlgorithms=+ssh-ed25519,rsa-sha2-512,rsa-sha2-256 -i ~/.ssh/pfx_key "${{ secrets.PFX_USER }}@${{ secrets.PFX_HOST }}" "sudo /usr/local/bin/pfx-status"
