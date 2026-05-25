@@ -1,0 +1,31 @@
+name: PFX Deploy Safe
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy PFX
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PFX_SSH_KEY }}" > ~/.ssh/pfx_key
+          chmod 600 ~/.ssh/pfx_key
+          ssh-keyscan -H ${{ secrets.PFX_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Run PFX Deploy Safe
+        run: |
+          ssh -i ~/.ssh/pfx_key ${{ secrets.PFX_USER }}@${{ secrets.PFX_HOST }} "sudo /usr/local/bin/pfx-deploy-safe"
+
+      - name: Check PFX Status
+        run: |
+          ssh -i ~/.ssh/pfx_key ${{ secrets.PFX_USER }}@${{ secrets.PFX_HOST }} "sudo /usr/local/bin/pfx-status"
