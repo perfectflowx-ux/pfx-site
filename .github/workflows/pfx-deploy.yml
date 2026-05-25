@@ -21,14 +21,23 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.PFX_SSH_KEY }}" > ~/.ssh/pfx_key
           chmod 600 ~/.ssh/pfx_key
-          ssh-keyscan -t rsa,ecdsa,ed25519 -H "${{ secrets.PFX_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -p "${{ secrets.PFX_PORT }}" -t rsa,ecdsa,ed25519 -H "${{ secrets.PFX_HOST }}" >> ~/.ssh/known_hosts
 
-      - name: Run PFX Deploy Safe
+      - name: Start PFX Deploy Async
         shell: bash
         run: |
-          ssh -o StrictHostKeyChecking=no -o HostKeyAlgorithms=+ssh-ed25519,ecdsa-sha2-nistp256,rsa-sha2-512,rsa-sha2-256 -o PubkeyAcceptedAlgorithms=+ssh-ed25519,rsa-sha2-512,rsa-sha2-256 -i ~/.ssh/pfx_key "${{ secrets.PFX_USER }}@${{ secrets.PFX_HOST }}" "sudo /usr/local/bin/pfx-deploy-safe"
+          ssh -p "${{ secrets.PFX_PORT }}" -o ServerAliveInterval=30 -o ServerAliveCountMax=6 -o StrictHostKeyChecking=no -i ~/.ssh/pfx_key "${{ secrets.PFX_USER }}@${{ secrets.PFX_HOST }}" "sudo /usr/local/bin/pfx-deploy-async"
+
+      - name: Wait Deploy
+        run: |
+          sleep 90
+
+      - name: Read Deploy Log
+        shell: bash
+        run: |
+          ssh -p "${{ secrets.PFX_PORT }}" -o ServerAliveInterval=30 -o ServerAliveCountMax=6 -o StrictHostKeyChecking=no -i ~/.ssh/pfx_key "${{ secrets.PFX_USER }}@${{ secrets.PFX_HOST }}" "sudo /usr/local/bin/pfx-deploy-last-log"
 
       - name: Check PFX Status
         shell: bash
         run: |
-          ssh -o StrictHostKeyChecking=no -o HostKeyAlgorithms=+ssh-ed25519,ecdsa-sha2-nistp256,rsa-sha2-512,rsa-sha2-256 -o PubkeyAcceptedAlgorithms=+ssh-ed25519,rsa-sha2-512,rsa-sha2-256 -i ~/.ssh/pfx_key "${{ secrets.PFX_USER }}@${{ secrets.PFX_HOST }}" "sudo /usr/local/bin/pfx-status"
+          ssh -p "${{ secrets.PFX_PORT }}" -o ServerAliveInterval=30 -o ServerAliveCountMax=6 -o StrictHostKeyChecking=no -i ~/.ssh/pfx_key "${{ secrets.PFX_USER }}@${{ secrets.PFX_HOST }}" "sudo /usr/local/bin/pfx-status"
